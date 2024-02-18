@@ -61,7 +61,7 @@ jobs:
             # avoid php prompt
             docker exec -t ${{ vars.PROJECT_NAME }} sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata"
             # install php
-            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt install php8.2 libapache2-mod-php php-mbstring php-xmlrpc php-soap php-gd php-xml php-cli php-zip php-bcmath php-tokenizer php-json php-pear php-curl php-mysql -y"
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt install php libapache2-mod-php php-mbstring php-xmlrpc php-soap php-gd php-xml php-cli php-zip php-bcmath php-tokenizer php-json php-pear php-curl php-mysql -y"
             # copy files
             docker cp /tmp/${{ vars.PROJECT_NAME }}/${{ vars.REPO_NAME }}/. ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}
             docker cp /tmp/${{ vars.PROJECT_NAME }}/.env ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}/.env
