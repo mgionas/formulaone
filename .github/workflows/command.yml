@@ -53,7 +53,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # create docker image
-            docker run -d -t --network nginxproxymanager_default --name ${{ vars.PROJECT_NAME }} ubuntu
+            docker run -d -t --network nginxproxymanager_default --name ${{ vars.PROJECT_NAME }} ubuntu:noble
             # Update and install dependencies
             docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt update && apt-get update && apt-get install -y zip unzip git curl nano"
             # install apache
