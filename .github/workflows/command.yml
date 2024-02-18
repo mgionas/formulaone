@@ -1,0 +1,128 @@
+name: Snippets CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: clean server & clone new deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            #remove old installation if exists
+            rm -r /tmp/${{ vars.PROJECT_NAME }} || true
+            # create temporary folder
+            mkdir /tmp/${{ vars.PROJECT_NAME }}
+            # load .env file and store it securely on the server
+            echo "${{ secrets.ENV_FILE }}" > /tmp/${{ vars.PROJECT_NAME }}/.env
+
+            # load vite.config.js file and store it securely on the server
+            echo "${{ secrets.VITE_CONFIG }}" > /tmp/${{ vars.PROJECT_NAME }}/vite.config.js
+
+            # load vite.config.js file and store it securely on the server
+            echo "${{ secrets.CERTIFICATE_CRT }}" > /tmp/${{ vars.PROJECT_NAME }}/certificate.crt
+            echo "${{ secrets.CERTIFICATE_KEY }}" > /tmp/${{ vars.PROJECT_NAME }}/private.key
+
+            # load apache conf file and store it securely on the server
+            echo "${{ vars.APACHE_CONF }}" > /tmp/${{ vars.PROJECT_NAME }}/${{ vars.PROJECT_NAME }}.conf
+
+            # Stop and remove any existing container to ensure a clean deployment
+            docker stop ${{ vars.PROJECT_NAME }} || true
+            docker rm ${{ vars.PROJECT_NAME }} || true
+
+            # Pull the latest github files
+            cd /tmp/${{ vars.PROJECT_NAME }}
+            git clone git@github.com:${{ github.repository }}.git
+
+  build:
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - name: run production
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # create docker image
+            docker run -d -t --network nginxproxymanager_default --name ${{ vars.PROJECT_NAME }} ubuntu
+            # Update and install dependencies
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt-get update && apt-get install -y zip unzip git curl nano"
+            # install apache
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt install apache2 -y"
+            # avoid php prompt
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata"
+            # install php
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt install php libapache2-mod-php php-mbstring php-xmlrpc php-soap php-gd php-xml php-cli php-zip php-bcmath php-tokenizer php-json php-pear php-curl php-mysql -y"
+            # copy files
+            docker cp /tmp/${{ vars.PROJECT_NAME }}/${{ vars.REPO_NAME }}/. ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}
+            docker cp /tmp/${{ vars.PROJECT_NAME }}/.env ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}/.env
+            docker cp /tmp/${{ vars.PROJECT_NAME }}/vite.config.js ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}/vite.config.js
+            docker cp /tmp/${{ vars.PROJECT_NAME }}/${{ vars.PROJECT_NAME }}.conf ${{ vars.PROJECT_NAME }}:/etc/apache2/sites-available/${{ vars.PROJECT_NAME }}.conf
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "mkdir /var/www/${{ vars.PROJECT_NAME }}/crt"
+            docker cp /tmp/${{ vars.PROJECT_NAME }}/certificate.crt ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}/crt/certificate.crt
+            docker cp /tmp/${{ vars.PROJECT_NAME }}/private.key ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}/crt/private.key
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Update and install dependencies
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Install Node
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "curl -sL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*"
+            # Install Composer
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "curl -sS https://getcomposer.org/installer -o composer-setup.php"
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "php composer-setup.php --install-dir=/usr/local/bin --filename=composer"
+
+      - name: config apache
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # config apache
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "a2dissite 000-default.conf && a2enmod rewrite && a2ensite ${{ vars.PROJECT_NAME }}.conf && service apache2 start"
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "cd /var/www/${{ vars.PROJECT_NAME }} && composer install"
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "chmod -R 777 /var/www/${{ vars.PROJECT_NAME }}/storage /var/www/${{ vars.PROJECT_NAME }}/bootstrap/cache"
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "cd /var/www/${{ vars.PROJECT_NAME }} && npm install && npm run build"
+
+  clean:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Update and install dependencies
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # remove installation materials
+            rm -r /tmp/${{ vars.PROJECT_NAME }} || true
+
+
+
+            
+
+            
+            
+            
+            
+            
+            
+
