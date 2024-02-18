@@ -55,7 +55,7 @@ jobs:
             # create docker image
             docker run -d -t --network nginxproxymanager_default --name ${{ vars.PROJECT_NAME }} ubuntu
             # Update and install dependencies
-            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt-get update && apt-get install -y zip unzip git curl nano"
+            docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt update && apt-get update && apt-get install -y zip unzip git curl nano"
             # install apache
             docker exec -t ${{ vars.PROJECT_NAME }} sh -c "apt install apache2 -y"
             # avoid php prompt
