@@ -3,7 +3,12 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
+
+use App\Http\Controllers\dataFetchController;
+
+use App\Models\live_positions;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,12 +22,12 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+
+    $getSeasons = Http::get('https://f1.sportmonks.com/api/v1.0/seasons',[
+        'api_token' => 'ssvgFPz5rOHQEiTz1FiwAhAePBWjzRhRaiIx6sA4qt86FHdDz82529lrdQIC'
     ]);
+    
+    return Inertia::render('Welcome');
 });
 
 Route::get('/dashboard', function () {
@@ -34,5 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+
+Route::get('/{trackId}', [dataFetchController::class, 'getMeetings']);
+
 
 require __DIR__.'/auth.php';
