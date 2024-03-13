@@ -44,6 +44,16 @@ return [
             'throw' => false,
         ],
 
+        // 'disks' => [
+        //     'python' => [
+        //         'driver' => 'local',
+        //         'root'   => storage_path().'/python',
+        //     ],
+        // ],
+
+        // Storage::disk('csv')->put('file.csv', $content);
+        // $content = Storage::disk('python')->get('file.csv');
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -6,9 +6,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
-use App\Http\Controllers\dataFetchController;
+use App\Http\Controllers\Admin\ScheduleController;
+use App\Http\Controllers\Admin\SessionController;
+use App\Http\Controllers\Admin\RaceController;
+use App\Http\Controllers\Admin\SimulationController;
 
-use App\Models\live_positions;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +24,6 @@ use App\Models\live_positions;
 */
 
 Route::get('/', function () {
-
-    $getSeasons = Http::get('https://f1.sportmonks.com/api/v1.0/seasons',[
-        'api_token' => 'ssvgFPz5rOHQEiTz1FiwAhAePBWjzRhRaiIx6sA4qt86FHdDz82529lrdQIC'
-    ]);
-    
     return Inertia::render('Welcome');
 });
 
@@ -38,10 +35,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // race
+    Route::resource('/dashboard/schedule', ScheduleController::class);
+    Route::get('/dashboard/session/{year}/{name}/{type}', [SessionController::class, 'getSession'])->name('getSession');
+    Route::post('/dashboard/storeSessionData',[SessionController::class, 'storeSessionData'])->name('storeSessionData');
+    Route::get('/dashboard/getFutureSession/{year}/{name}/{type}', [SessionController::class, 'getFutureSession'])->name('getFutureSession');
+    Route::get('/dashboard/simulator',[SimulationController::class, 'getSimulation'])->name('simulator');
+
 });
-
-
-Route::get('/{trackId}', [dataFetchController::class, 'getMeetings']);
-
 
 require __DIR__.'/auth.php';

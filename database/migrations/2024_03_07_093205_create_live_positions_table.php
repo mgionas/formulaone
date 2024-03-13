@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('raceId')->nullable();
             $table->text('positionTimestamp');
-            $table->json('livePositions');
+            $table->json('pilotPositions');
             $table->timestamps();
         });
     }
