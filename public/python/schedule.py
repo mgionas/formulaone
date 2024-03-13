@@ -12,7 +12,7 @@ def getschedule(year):
 
 @app.command()
 def hello():
-    print('hello')
+    print('json_string')
 
 if __name__ == "__main__":
     app()
