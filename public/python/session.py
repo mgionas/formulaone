@@ -8,8 +8,8 @@ app = typer.Typer()
 
 @app.command()
 def getSession(year, name, type):
-    fastf1.Cache.clear_cache('python/cache')
-    fastf1.Cache.disabled()
+    #fastf1.Cache.clear_cache('python/cache')
+    #fastf1.Cache.disabled()
 
     session = fastf1.get_session(int(year), str(name), str(type))
     #session = fastf1.get_session(2024, 'FORMULA 1 STC SAUDI ARABIAN GRAND PRIX 2024', 'Race')
