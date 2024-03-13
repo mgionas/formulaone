@@ -7,7 +7,7 @@ on:
 
 jobs:
   prepare:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - name: clean server & clone new deployment
         uses: appleboy/ssh-action@master
@@ -42,7 +42,7 @@ jobs:
             git clone git@github.com:${{ github.repository }}.git
 
   build:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     needs: prepare
     steps:
       - name: run production
@@ -72,7 +72,7 @@ jobs:
             docker cp /tmp/${{ vars.PROJECT_NAME }}/private.key ${{ vars.PROJECT_NAME }}:/var/www/${{ vars.PROJECT_NAME }}/crt/private.key
 
   deploy:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Update and install dependencies
@@ -102,7 +102,7 @@ jobs:
             docker exec -t ${{ vars.PROJECT_NAME }} sh -c "cd /var/www/${{ vars.PROJECT_NAME }} && npm install && npm run build"
 
   clean:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     needs: deploy
     steps:
       - name: Update and install dependencies
