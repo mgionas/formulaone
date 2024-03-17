@@ -83,7 +83,7 @@ def fix_json(line):
     return line
 
 
-def _to_file_overwrite(write_api, self, msg):
+def _to_file_overwrite(write_api, self, msg, race_id):
     mysql_connection = create_mysql_connection()
     if not mysql_connection:
        return 1
@@ -120,8 +120,39 @@ def _to_file_overwrite(write_api, self, msg):
             write_to_mysql_live_positions(mysql_connection, mysql_data)
         
             n += 1
-   
-        
+
+    elif arrays[0] == 'CarData.z':
+                decoded_data = zlib.decompress(base64.b64decode(arrays[1]), -zlib.MAX_WBITS)
+
+                # Decode byte string to string
+                response_str = decoded_data.decode('utf-8')
+                # Convert string to Python data structure (dictionary)
+                data = json.loads(response_str)
+                # Assuming you want the list of positions
+                
+                entries = data['Entries']
+
+                for entry in entries:
+                    #print('>>>>>>>>>>',entry['Utc'])
+                    timestamp_str = entry['Utc']
+                    # Trim the string to ensure it matches the '%Y-%m-%dT%H:%M:%S.%fZ' format
+                    trimmed_timestamp_str = timestamp_str[:23] + 'Z' if len(timestamp_str) > 23 else timestamp_str
+
+                    # Parse the string to a datetime object
+                    dt_object = datetime.strptime(trimmed_timestamp_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+                    # Format accordingly, truncating microseconds to fit MySQL DATETIME(3) precision if needed
+                    mysql_datetime_str_with_ms = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+
+                    print('position Entries -> ', n, ' - ', entry)
+                    print('old -> ', timestamp_str, 'converted -> ', mysql_datetime_str_with_ms)
+                    print('raceID ->', race_id)
+
+                    # Example format for MySQL data
+                    mysql_data = (str(race_id), mysql_datetime_str_with_ms, json.dumps(entry['Cars']))  # Example format
+                    write_to_mysql_telemetry(mysql_connection, mysql_data)
+
+                    n += 1
 
 
 def _start_overwrite(self):
@@ -133,7 +164,7 @@ def _start_overwrite(self):
         raise KeyboardInterrupt
 
 #store live data to database
-def store_live_data():
+def store_live_data(race_id):
     """
     Stores live data in a influx database
     This function only works if a f1 live session is active.
@@ -237,8 +268,8 @@ def store_mock_data(path_to_saved_data, race_id, speedup_factor=1):
 
 # we have two commands Live and Mock data
 @app.command()
-def process_live_session(influx_url="http://localhost:8086"):
-    store_live_data()
+def process_live_session(race_id):
+    store_live_data(race_id)
     return 0
 
 

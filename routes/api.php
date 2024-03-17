@@ -78,12 +78,8 @@ Route::get('/racePositions/{raceId}/{fromT}/{toT?}', function($raceId, $fromT, $
             ['positionTimestamp', '<=', $toTimestamp],
         ])->limit(50)->get();
 
-        return response()->json(['from'=>$fromTimestamp, 'to'=>$toTimestamp, 'results'=>$raceRecords]);
+        return response()->json(['from'=>$fromTimestamp, 'to'=>$toTimestamp, 'results'=>json_decode($raceRecords)]);
     }
-
-
-
-    // Return the converted timestamps and query results as JSON
     
 });
 

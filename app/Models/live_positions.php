@@ -8,4 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class live_positions extends Model
 {
     use HasFactory;
+
+    protected $casts = [
+        'pilotPositions' => 'object'
+    ];
 }
